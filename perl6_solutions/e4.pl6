@@ -21,16 +21,13 @@ subset Word of Cool where / ^ <:Numeric(<Numeric>)+:Letter>+ $ /;
 
 multi sub is-palindrome( Word $word ) {
 #   $word.comb eqv $word.comb.reverse
-    $word eq $word.flip
+    $word eq $word.flip  # 25% faster
 }
 
 sub is-product-of-two-acceptable-factors(Int $c, Range $r) {
-    return False if $c.is-prime;
-    say $c~' is not prime.';
     for $r.grep: $c %% * {
-    #   say "Testing $c div $_";
         if ($c div $_) ~~ $r {
-            say "Factors: $_ and "~($c div $_);
+            say "Factors: $_ and {$c div $_}";
             return True;
         }
     }
