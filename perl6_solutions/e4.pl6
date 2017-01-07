@@ -20,7 +20,8 @@ sub MAIN( Int :$digits where * > 0  = 3) {
 subset Word of Cool where / ^ <:Numeric(<Numeric>)+:Letter>+ $ /;
 
 multi sub is-palindrome( Word $word ) {
-    $word.comb eqv $word.comb.reverse
+#   $word.comb eqv $word.comb.reverse
+    $word eq $word.flip
 }
 
 sub is-product-of-two-acceptable-factors(Int $c, Range $r) {
