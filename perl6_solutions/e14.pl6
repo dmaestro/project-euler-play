@@ -20,13 +20,14 @@ subset Nat of Int where * > 0;
 
 sub prefix:<cz>(Nat $n) { $n %% 2 ?? $n div 2 !! $n * 3 + 1 }
 
-proto sub cz_length(Nat) is cached { * }
+# proto sub cz_length(Nat) is cached { * }
 multi sub cz_length(1) { 1 }
 multi sub cz_length(Nat $start) {
-    1 + cz_length(cz $start);
+    state %length;
+    %length{$start} //= 1 + cz_length(cz $start);
 }
 
 sub MAIN(Nat :$limit = 1_000_000 - 1) {
     say $limit, { cz $_ } ... 1;
-    say (1..$limit).map({ ( $_ => .&cz_length ).antipair });
+    say (1..$limit).map({ ( $_ => .&cz_length ).antipair }).max.value;
 }
