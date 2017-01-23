@@ -46,6 +46,8 @@ enum Compass-Points (
     NW  =>  Coordinate.new(-1,-1),
 );
 
+my \Origin := Coordinate.new(0,0);
+
 multi sub postcircumfix:<[ ]>(Positional $ary, Coordinate *$i) {
     reduce { $^a[$^b] }, $ary, |$i;
 }
@@ -67,5 +69,15 @@ say @grid[$i-$down];
 say consecutive($i, E);
 
 sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
-    my @coords = (^$run).map({ [+] ($start, |($direction xx $_)) })
+    my @coords = (^$run).map({
+        # Origin is required because reduction operator
+        # does not work well with one Array operand :-)
+        [+] (Origin, $start, |($direction xx $_))
+    });
+    my @cells = @coords.map( { @grid[$_] } );
+    return unless all(@cells) ~~ Cool;
+    return @cells;
 }
+
+say consecutive($i, S);
+
