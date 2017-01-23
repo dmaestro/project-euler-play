@@ -35,17 +35,37 @@ END GRID
 class Coordinate is Array {
 }
 
+enum Compass-Points (
+    N   =>  Coordinate.new(-1,0),
+    NE  =>  Coordinate.new(-1,1),
+    E   =>  Coordinate.new(0, 1),
+    SE  =>  Coordinate.new(1 ,0),
+    S   =>  Coordinate.new(1 ,0),
+    SW  =>  Coordinate.new(1 ,-1),
+    W   =>  Coordinate.new(0 ,-1),
+    NW  =>  Coordinate.new(-1,-1),
+);
+
 multi sub postcircumfix:<[ ]>(Positional $ary, Coordinate *$i) {
     reduce { $^a[$^b] }, $ary, |$i;
 }
 
-multi sub infix:<+>(Coordinate \a, Coordinate \b) {
+multi sub infix:<+>( Coordinate \a, Coordinate \b ) {
     Coordinate.new(a.flat Z+ b.flat);
 }
 
+multi sub infix:<->( Coordinate \a, Coordinate \b ) {
+    Coordinate.new(a.flat Z- b.flat);
+}
+
 my Coordinate $i = Coordinate.new(18, 7);
-my Coordinate $down = Coordinate.new(1, 0);
+my Coordinate $down = S;
 say @grid[18;7];
 say @grid[$i];
 say @grid[$i+$down];
+say @grid[$i-$down];
+say consecutive($i, E);
 
+sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
+    my @coords = (^$run).map({ [+] ($start, |($direction xx $_)) })
+}
