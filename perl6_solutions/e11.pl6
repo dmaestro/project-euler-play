@@ -29,9 +29,6 @@ END GRID
 # What is the greatest product of four adjacent numbers in the same direction
 # (up, down, left, right, or diagonally) in the 20×20 grid?
 
-
-# subset Index of Array[Int];
-
 class Coordinate is Array {
 }
 
@@ -49,7 +46,7 @@ enum Compass-Points (
 my \Origin := Coordinate.new(0,0);
 
 multi sub postcircumfix:<[ ]>(Positional $ary, Coordinate *$i) {
-    reduce { $^a[$^b] }, $ary, |$i;
+    reduce { $^a[$^b] // Nil }, $ary, |$i;
 }
 
 multi sub infix:<+>( Coordinate \a, Coordinate \b ) {
@@ -60,18 +57,10 @@ multi sub infix:<->( Coordinate \a, Coordinate \b ) {
     Coordinate.new(a.flat Z- b.flat);
 }
 
-my Coordinate $i = Coordinate.new(18, 7);
-my Coordinate $down = S;
-say @grid[18;7];
-say @grid[$i];
-say @grid[$i+$down];
-say @grid[$i-$down];
-say consecutive($i, E);
-
 sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
     my @coords = (^$run).map({
         # Origin is required because reduction operator
-        # does not work well with one Array operand :-)
+        # does not work well with one Array operand :-/
         [+] (Origin, $start, |($direction xx $_))
     });
     my @cells = @coords.map( { @grid[$_] } );
@@ -79,5 +68,13 @@ sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
     return @cells;
 }
 
-say consecutive($i, S);
+sub MAIN(:$run = 4) {
+    my @all_cell_coordinates =
+        (^(@grid.elems) X ^(@grid[0].elems)).map({ Coordinate.new($_) });
+    my @all_runs = (@all_cell_coordinates X (E, SE, S, SW))\
+        .map({ consecutive( |$_, $run ) })\
+        .grep( *.so );  # omit failures
+    my @products = @all_runs.map: { [*] |$_ };
+    say @products.list.max;
+}
 
