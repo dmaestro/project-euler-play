@@ -20,10 +20,19 @@
 
 subset Nat of Int where * > 0;
 
+sub first_factor (Nat $n) {
+    (2 ... ($n max 4).sqrt.Int).first( $n %% * ) // $n;
+}
+
 sub divisors(Nat $n) {
-    (1 ... $n).grep: $n %% *;
+    state $factors = :{1 => Set.new(1)};  # Int => Set
+    $factors{$n} //= Set.new(
+        first_factor($n).&( { (1, $^f) X* divisors( $n div $^f ).keys } ).Slip
+    );
+    $factors{$n};
 }
 
 sub MAIN(Nat :$ndiv = 5_000) {
-  say (1 ... *).map({ $_ * ($_ + 1) div 2 }).first: { .&divisors.elems > $ndiv };
+    say (1 ... *).map({ $_ * ($_ + 1) div 2 }).first: { .&divisors.elems > $ndiv };
+#   say divisors($_).perl for (1 ... 8).map({ $_ * ($_ + 1) div 2 });
 }
