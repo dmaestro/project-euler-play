@@ -21,7 +21,8 @@
 subset Nat of Int where * > 0;
 
 sub first_factor (Nat $n) {
-    (2 ... ($n max 4).sqrt.Int).first( $n %% * ) // $n;
+    state Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
+    $primes.cache.first( $n %% * || * > sqrt($n) ).grep( $n %% * )[0]  // $n;
 }
 
 sub divisors(Nat $n) {
@@ -32,7 +33,6 @@ sub divisors(Nat $n) {
     $factors{$n};
 }
 
-sub MAIN(Nat :$ndiv = 5_000) {
+sub MAIN(Nat :$ndiv = 500) {
     say (1 ... *).map({ $_ * ($_ + 1) div 2 }).first: { .&divisors.elems > $ndiv };
-#   say divisors($_).perl for (1 ... 8).map({ $_ * ($_ + 1) div 2 });
 }
