@@ -17,7 +17,10 @@ sub MAIN( Int :$digits where * > 0  = 3) {
     say $candidate;
 }
 
-subset Word of Cool where / ^ <:Numeric(<Numeric>)+:Letter>+ $ /;
+my &word_regex = $*VM.version >= v2017.01
+    ?? / ^ <:Numeric(<Decimal>)+:Letter>+ $ /
+    !! / ^ <:Numeric(<Numeric>)+:Letter>+ $ /;
+subset Word of Cool where &word_regex;
 
 multi sub is-palindrome( Word $word ) {
 #   $word.comb eqv $word.comb.reverse
