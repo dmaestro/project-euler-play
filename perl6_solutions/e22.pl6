@@ -18,9 +18,8 @@ sub MAIN(Cool :$head = Inf, *@file) {
     }
     for @file -> $filename {
         say [+] $filename.IO.open(:nl-in(",")).lines.map( {
-                S:g/\"//;
+                S:g/\"//.Str;
         } ).head($head).sort».&{
-            .say;
             ++$ * [+] .comb.map({ %letter_value{$_} });
         }
     }
