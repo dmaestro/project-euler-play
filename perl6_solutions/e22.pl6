@@ -9,17 +9,19 @@
 #
 # What is the total of all the name scores in the file?
 my @letters = ('A'..'Z');
-my %letter_value := :{ Nil => 0, @letters.clone.unshift(Nil).antipairs.flat };
-%letter_value{'Z'}.say;
+my %letter_value := :{ (Any) => 0, @letters.clone.unshift(Nil).antipairs.flat };
 
 my $base_path = $*PROGRAM.resolve.parent.parent;
-sub MAIN(*@file) {
+sub MAIN(Cool :$head = Inf, *@file) {
     if ( ! @file ) {
         push @file, $base_path.child(<p022_names.txt>);
     }
     for @file -> $filename {
-        $filename.IO.open(:nl-in(",")).lines.map( {
-            S:g/\"//;
-        } ).elems;
+        say [+] $filename.IO.open(:nl-in(",")).lines.map( {
+                S:g/\"//;
+        } ).head($head).sort».&{
+            .say;
+            ++$ * [+] .comb.map({ %letter_value{$_} });
+        }
     }
 }
