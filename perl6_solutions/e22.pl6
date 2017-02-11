@@ -17,10 +17,9 @@ sub MAIN(Cool :$head = Inf, *@file) {
         push @file, $base_path.child(<p022_names.txt>);
     }
     for @file -> $filename {
-        say [+] $filename.IO.open(:nl-in(",")).lines.map( {
-                S:g/\"//.Str;
-        } ).head($head).sort».&{
-            ++$ * [+] .comb.map({ %letter_value{$_} });
-        }
+        say [+] $filename.IO.open(:nl-in(",")).lines\
+            .head($head).sort».&{
+                ++$ * [+] .comb.map({ %letter_value{$_} // 0 });
+            }
     }
 }
