@@ -36,9 +36,9 @@ sub d(Nat $n) {
     [+] (divisors($n) (-) $n.Set).keys;
 }
 
-say "$_\t=> {d($_)}\t {is_abundant($_)}" for (1..32);
-
 sub MAIN(Nat :$max = 28123) {
+#   say "$_\t=> {d($_)}\t {is_abundant($_)}" for (1..$max);
+
     my $abundant = (12 ... $max).grep(*.&is_abundant);
     my $sum = 0;
     my $might_not_be_sums = SetHash.new;
@@ -52,8 +52,8 @@ sub MAIN(Nat :$max = 28123) {
                 my $new_cursor = ($first_an + $second_an) min $max_considered;
                 if ( $new_cursor > $cursor ) {
                     my $newly_summed = $might_not_be_sums\
-                        .grep( *.key <= $new_cursor&$max ).Set;
-                    $might_not_be_sums (-)= $newly_summed;
+                        .grep( *.key < $new_cursor&($max+1) ).Set;
+                    $might_not_be_sums (-)= $newly_summed (+) $new_cursor.Set;
                     $newly_summed.keys.sort.say;
                     $sum += [+] $newly_summed.keys;
                     $cursor = $new_cursor;
@@ -65,7 +65,10 @@ sub MAIN(Nat :$max = 28123) {
                 }
                 last SUM if $cursor >= $max;
             }
+        #   "$first_an : $second_an".say;
             my $sum_an = $first_an + $second_an;
+            next if $sum_an <= $cursor;
+            last if $sum_an > $max;
             if ( $sum_an > $max_considered ) {
                 # Add everything up to this sum to the "might" set
                 $might_not_be_sums (+)= ($max_considered^..^$sum_an).Set;
