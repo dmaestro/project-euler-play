@@ -46,6 +46,8 @@ sub MAIN(Nat :$max = 28123) {
     my $max_considered = 0;
     SUM:
     for $abundant.cache -> $first_an {
+        my $add_time = 0;
+        my $sub_time = 0;
         for $abundant.cache.grep( * <= $first_an ) -> $second_an {
             FIRST {
                 # we will not consider a sum this low again, so compute a partial sum
@@ -53,16 +55,16 @@ sub MAIN(Nat :$max = 28123) {
                 if ( $new_cursor > $cursor ) {
                     my $newly_summed = $might_not_be_sums\
                         .grep( *.key < $new_cursor&($max+1) ).Set;
-                    $might_not_be_sums (-)= $newly_summed (+) $new_cursor.Set;
+                    $might_not_be_sums (-)= $newly_summed (|) $new_cursor.Set;
                     $newly_summed.keys.sort.say;
                     $sum += [+] $newly_summed.keys;
                     $cursor = $new_cursor;
-                    "Cursor: $cursor".say;
-                    "Max Considered: $max_considered".say;
+            #       "Cursor: $cursor".say;
+            #       "Max Considered: $max_considered".say;
                 }
-                else {
-                    "No change!".say;
-                }
+            #   else {
+            #       "No change!".say;
+            #   }
                 last SUM if $cursor >= $max;
             }
         #   "$first_an : $second_an".say;
@@ -71,14 +73,20 @@ sub MAIN(Nat :$max = 28123) {
             last if $sum_an > $max;
             if ( $sum_an > $max_considered ) {
                 # Add everything up to this sum to the "might" set
-                $might_not_be_sums (+)= ($max_considered^..^$sum_an).Set;
+                my $adding_set = ($max_considered^..^$sum_an).Set;
+                $might_not_be_sums.WHAT.say;
+                $might_not_be_sums (|)= $adding_set;
                 $max_considered = $sum_an;
+                $add_time += now - ENTER { now };
             }
             else {
                 # Remove this sum from the set
-                $might_not_be_sums (-)= $sum_an.Set;
+                $might_not_be_sums = $might_not_be_sums.SetHash;
+                $might_not_be_sums{$sum_an}:delete;
+                $sub_time += now - ENTER { now };
             }
         }
+        say "Sub: $sub_time\nAdd: $add_time";
     }
     $sum.say;
 }
