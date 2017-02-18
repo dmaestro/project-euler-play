@@ -12,7 +12,8 @@
 subset Nat of Int where * > 0;
 
 # simple factorial
-sub prefix:<f!>(Nat $n) { [*] 1..$n }
+multi sub prefix:<f!>(0) { 1 }
+multi sub prefix:<f!>(Nat $n) { [*] 1..$n }
 
 sub MAIN(Nat :$nth = 1_000_000, Nat :$n = 10, *@symbols) {
     if (!@symbols) {
@@ -20,4 +21,15 @@ sub MAIN(Nat :$nth = 1_000_000, Nat :$n = 10, *@symbols) {
     }
     $nth.say;
     @symbols.say;
+    my @output;
+    my $rem = $nth - 1;
+    my $count = @symbols.elems;
+    return if $nth > f! $count;
+    for ^$count {
+        $count--;
+        my $index = $rem div (f! $count);
+        $rem = $rem % (f! $count);
+        push @output, |@symbols.splice($index,1);
+    }
+    say [~] @output;
 }
