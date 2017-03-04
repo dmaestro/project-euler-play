@@ -30,11 +30,23 @@ subset Nat of Int where * > 0;
 
 sub MAIN( :$limit = 1000 ) {
     my Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
-    for $primes...^( * > $limit ) -> $b {
-        for (1...^$limit) X* (1, -1) -> $a {
-            next unless (1 + $a + $b).is-prime;
-            next if ($a² - 4*$b).&{ $^d >= 0 && $d %% sqrt($d)  };
-            say (1, $a, $b);
+    my @generators = gather {
+        # for n = 0, b must be prime
+        for $primes...^( * > $limit ) -> $b {
+            # for a = 0 and n = 1, b + 1 cannot be prime,
+            # unless b = 2
+            # so skip a = 0
+            for (1...^$limit) X* (1, -1) -> $a {
+                # for n = 1, 1 + a + b must be prime
+                next unless (1 + $a + $b).is-prime;
+                # if the discriminant of a quadratic equation is the
+                # square of a positive integer, it has integer factors
+                next if ($a² - 4*$b).&{ $^d >= 0 && $d %% sqrt($d)  };
+                take (1, $a, $b) =>
+                  (0 ...^ { ! ($^n² + $a * $^n + $b).is-prime }).tail;
+            }
         }
-    }
+    };
+    say @generators.max(*.value);
+    say @generators.max(*.value).key.&{ [*] .flat };
 }
