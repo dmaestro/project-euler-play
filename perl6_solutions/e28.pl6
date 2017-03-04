@@ -12,14 +12,15 @@
 
 subset Nat of Int where * > 0;
 
-multi sub diagonals(1) { (1,) }
-multi sub diagonals(Nat $n) {
-    ( diagonals($n - 2),
-        ( diagonals($n - 2)[* - 1] X+ (1..4).map: * * ($n - 1) )
-    ).flat
+multi sub diagonal_sum(1) { 1 => 1 }
+multi sub diagonal_sum(Nat $n) {
+    my Pair $ms = diagonal_sum($n - 2); # max => sum
+    my @corners = (1..4).map: * * ($n - 1);
+    $ms.key + @corners[ * - 1 ] =>
+        [+] $ms.value, |($ms.key X+ @corners );
 }
 
 sub MAIN(Nat :$size where (* + 1) %% 2 = 1001) {
     say $size;
-    say [+] diagonals($size);
+    say diagonal_sum($size);
 }
