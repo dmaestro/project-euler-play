@@ -40,6 +40,14 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     }
 }
 
+my @test = [
+    [ 1, 1, 1, 1, 2, 6 ],
+    [ 1, 4, 6, 6, 6, 9 ],
+    [ 4, 5, 6, 7, 8, 9 ],
+    [ 6, 6, 6, 7, 9, 11 ],
+    [ 9, 10, 11, 11, 11, 11 ],
+];
+
 sub MAIN(Nat :$limit where * > 1 = 100) {
-    say gather combine_sort { ; }, <a b c>, <c d e> ;
+    say gather combine_sort { say "f: ", ($^x, $^y); @test[ $^x][ $^y ] }, [^5], [^6] ;
 }
