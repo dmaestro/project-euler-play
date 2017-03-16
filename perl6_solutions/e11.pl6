@@ -36,7 +36,7 @@ enum Compass-Points (
     N   =>  Coordinate.new(-1,0),
     NE  =>  Coordinate.new(-1,1),
     E   =>  Coordinate.new(0, 1),
-    SE  =>  Coordinate.new(1 ,0),
+    SE  =>  Coordinate.new(1 ,1),
     S   =>  Coordinate.new(1 ,0),
     SW  =>  Coordinate.new(1 ,-1),
     W   =>  Coordinate.new(0 ,-1),

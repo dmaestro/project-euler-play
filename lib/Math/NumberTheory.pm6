@@ -5,6 +5,10 @@ class Types {
 }
 
 class Coordinate is export is List {
+    multi sub postcircumfix:<[ ]>(Positional $ary, Coordinate *$i) is export {
+        reduce { $^a[$^b] // Nil }, $ary, |$i;
+    }
+
     multi sub infix:<+>( Coordinate \a, Coordinate \b ) is export {
         Coordinate.new( | (a.flat Z+ b.flat) );
     }
