@@ -17,3 +17,8 @@ class Coordinate is export is List {
         Coordinate.new( | (a.flat Z- b.flat) );
     }
 }
+
+enum Dir is export (
+    E   =>  Coordinate.new(0, 1),
+    SE  =>  Coordinate.new(1 ,1),
+);
