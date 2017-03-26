@@ -18,7 +18,15 @@ class Coordinate is export is List {
     }
 }
 
+constant Origin is export := Coordinate(0, 0);
+
 enum Dir is export (
-    E   =>  Coordinate.new(0, 1),
-    SE  =>  Coordinate.new(1 ,1),
+    N   =>  Coordinate(-1, 0),
+    NE  =>  Coordinate(-1, 1),
+    E   =>  Coordinate( 0, 1),
+    SE  =>  Coordinate( 1, 1),
+    S   =>  Coordinate( 1, 0),
+    SW  =>  Coordinate( 1,-1),
+    W   =>  Coordinate( 0,-1),
+    NW  =>  Coordinate(-1,-1),
 );
