@@ -29,7 +29,7 @@ END GRID
 # What is the greatest product of four adjacent numbers in the same direction
 # (up, down, left, right, or diagonally) in the 20×20 grid?
 
-class Coordinate is Array {
+class Coordinate is List {
 }
 
 enum Compass-Points (
@@ -50,11 +50,11 @@ multi sub postcircumfix:<[ ]>(Positional $ary, Coordinate *$i) {
 }
 
 multi sub infix:<+>( Coordinate \a, Coordinate \b ) {
-    Coordinate.new(a.flat Z+ b.flat);
+    Coordinate.new(|(a.flat Z+ b.flat));
 }
 
 multi sub infix:<->( Coordinate \a, Coordinate \b ) {
-    Coordinate.new(a.flat Z- b.flat);
+    Coordinate.new(|(a.flat Z- b.flat));
 }
 
 sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
@@ -70,7 +70,7 @@ sub consecutive (Coordinate $start, Coordinate $direction, Int $run = 4) {
 
 sub MAIN(:$run = 4) {
     my @all_cell_coordinates =
-        (^(@grid.elems) X ^(@grid[0].elems)).map({ Coordinate.new($_) });
+        (^(@grid.elems) X ^(@grid[0].elems)).map({ Coordinate.new(|$_) });
     my @all_runs = (@all_cell_coordinates X (E, SE, S, SW))\
         .map({ consecutive( |$_, $run ) })\
         .grep( *.so );  # omit failures
