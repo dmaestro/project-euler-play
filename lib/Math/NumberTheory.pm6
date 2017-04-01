@@ -16,6 +16,19 @@ class Coordinate is export is List {
     multi sub infix:<->( Coordinate \a, Coordinate \b ) is export {
         Coordinate.new( | (a.flat Z- b.flat) );
     }
+
+    method unit-vectors {
+        map { Coordinate(|$_) },
+            unit-vectors(self)
+    }
+}
+
+sub unit-vectors (+@coordinate) is export {
+    gather {
+        for @coordinate.keys -> $i {
+            take eager map { +($_ == $i) }, @coordinate.keys
+        }
+    }
 }
 
 constant Origin is export := Coordinate(0, 0);
