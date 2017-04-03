@@ -25,6 +25,30 @@ multi postcircumfix:<[ ]>(Positional $ary, List $coord) {
     } );
 }
 
+sub unit_vectors(+@coordinate) {
+    @coordinate.perl.say;
+    gather {
+        for @coordinate.keys -> $i {
+            take eager map { +($_ == $i) }, @coordinate.keys;
+        }
+    }
+}
+
+sub new_boundary(&f, @cursor, +@sources) {
+    my $current_value = f( |@sources[@cursor] );
+    say "Current: $current_value";
+    for unit_vectors(@cursor) -> $vector {
+        $vector.perl.say;
+        my @new_cursor = @cursor;
+        repeat until my $new_value > $current_value {
+            @new_cursor = @new_cursor Z+ |$vector;
+            $new_value = f( |@sources[@new_cursor] );
+            say "New: @new_cursor => $new_value";
+            last;
+        }
+    }
+}
+
 sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
     push my @boundaries, 0 xx @sources.elems;
@@ -36,6 +60,7 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
         say 'Sources: ', @sources;
         say 'Cursor: ', @cursor, ' => ', f( |@sources[@cursor] );
         take @sources[ @cursor ];
+        new_boundary(&f, @cursor, @sources);
         last;
     }
 }
@@ -50,4 +75,8 @@ my @test = [
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
     say gather combine_sort { say "f: ", ($^x, $^y); @test[ $^x][ $^y ] }, [^5], [^6] ;
+    say "Unit(1): ", unit_vectors((^1).reverse);
+    say "Unit(2): ", unit_vectors((^2).reverse);
+    say "Unit(3): ", unit_vectors((^3).reverse);
+    say "Unit(4): ", unit_vectors((^4).reverse);
 }
