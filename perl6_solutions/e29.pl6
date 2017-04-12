@@ -37,14 +37,16 @@ sub unit_vectors(+@coordinate) {
 sub new_boundary(&f, @cursor, +@sources) {
     my $current_value = f( |@sources[@cursor] );
     say "Current: $current_value";
-    for unit_vectors(@cursor) -> $vector {
-        $vector.perl.say;
-        my @new_cursor = @cursor;
-        repeat until my $new_value > $current_value {
-            @new_cursor = @new_cursor Z+ |$vector;
-            $new_value = f( |@sources[@new_cursor] );
-            say "New: @new_cursor => $new_value";
-            last;
+    gather {
+        for unit_vectors(@cursor) -> $vector {
+            $vector.perl.say;
+            my @new_cursor = @cursor;
+            repeat while my $new_value eqv $current_value {
+                @new_cursor = @new_cursor Z+ $vector.flat;
+                $new_value = f( |@sources[@new_cursor] );
+                say "New: @new_cursor => $new_value";
+            }
+            take @new_cursor if $new_value.defined;
         }
     }
 }
@@ -57,11 +59,13 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
         my @cursor = |@boundaries.min: {
             f( |@sources[ $_ ] )
         };
+        my $temp = 0;
+        @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
         say 'Sources: ', @sources;
         say 'Cursor: ', @cursor, ' => ', f( |@sources[@cursor] );
         take @sources[ @cursor ];
-        new_boundary(&f, @cursor, @sources);
-        last;
+        push @boundaries, |new_boundary(&f, @cursor, @sources);
+        last if ++$ > 2;
     }
 }
 
