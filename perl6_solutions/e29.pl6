@@ -25,6 +25,11 @@ multi postcircumfix:<[ ]>(Positional $ary, List $coord) {
     } );
 }
 
+sub infix:<outside>(List $coord, List $boundary) {
+    fail if $coord.elems != $boundary.elems;
+    so any( $coord.flat Z< $boundary.flat );
+}
+
 sub unit_vectors(+@coordinate) {
     @coordinate.perl.say;
     gather {
@@ -34,38 +39,46 @@ sub unit_vectors(+@coordinate) {
     }
 }
 
-sub new_boundary(&f, @cursor, +@sources) {
-    my $current_value = f( |@sources[@cursor] );
+sub new_boundary(&v, @cursor) {
+    my $current_value = v( @cursor);
     say "Current: $current_value";
     gather {
+      while $current_value eqv v( @cursor ) {
         for unit_vectors(@cursor) -> $vector {
             $vector.perl.say;
             my @new_cursor = @cursor;
             repeat while my $new_value eqv $current_value {
                 @new_cursor = @new_cursor Z+ $vector.flat;
-                $new_value = f( |@sources[@new_cursor] );
-                say "New: @new_cursor => $new_value";
+                $new_value = v( @new_cursor);
+                say "New: {@new_cursor} => $new_value";
             }
             take @new_cursor if $new_value.defined;
         }
+        @cursor = @cursor.flat Z+ (1 xx @cursor.elems);
+      }
     }
 }
 
+# start with [0, 0] as boundary
+# select minumum boundary coordinate
+# compute value and take source values at that coordinate
+# while boundary_value.min exists
+#   if min value == current value
+#       replace the boundary coord with new boundaries
+
 sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
+    my &v = sub (@where) { return if Any ~~ any(@sources[@where]); say $(@where); f( |@sources[@where] ) };
     push my @boundaries, 0 xx @sources.elems;
     while (@boundaries) {
         say 'Boundaries: ', @boundaries;
-        my @cursor = |@boundaries.min: {
-            f( |@sources[ $_ ] )
-        };
-        my $temp = 0;
+        my @cursor = |@boundaries.min: &v;
         @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
-        say 'Sources: ', @sources;
-        say 'Cursor: ', @cursor, ' => ', f( |@sources[@cursor] );
+    #   say 'Sources: ', @sources;
+        say 'Cursor: ', @cursor, ' => ', v( @cursor );
         take @sources[ @cursor ];
-        push @boundaries, |new_boundary(&f, @cursor, @sources);
-        last if ++$ > 2;
+        push @boundaries, |new_boundary(&v, @cursor );
+    #   last if ++$ > 4;
     }
 }
 
@@ -79,8 +92,8 @@ my @test = [
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
     say gather combine_sort { say "f: ", ($^x, $^y); @test[ $^x][ $^y ] }, [^5], [^6] ;
-    say "Unit(1): ", unit_vectors((^1).reverse);
-    say "Unit(2): ", unit_vectors((^2).reverse);
-    say "Unit(3): ", unit_vectors((^3).reverse);
-    say "Unit(4): ", unit_vectors((^4).reverse);
+#   say "Unit(1): ", unit_vectors((^1).reverse);
+#   say "Unit(2): ", unit_vectors((^2).reverse);
+#   say "Unit(3): ", unit_vectors((^3).reverse);
+#   say "Unit(4): ", unit_vectors((^4).reverse);
 }
