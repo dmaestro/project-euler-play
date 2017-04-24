@@ -45,12 +45,13 @@ sub new_boundary(&v, @cursor) {
     gather {
       while $current_value eqv v( @cursor ) {
         for unit_vectors(@cursor) -> $vector {
-            $vector.perl.say;
+        #   $vector.perl.say;
             my @new_cursor = @cursor;
             repeat while my $new_value eqv $current_value {
                 @new_cursor = @new_cursor Z+ $vector.flat;
                 $new_value = v( @new_cursor);
-                say "New: {@new_cursor} => $new_value";
+                say "New: {@new_cursor} => $new_value"
+                    if $new_value.defined;
             }
             take @new_cursor if $new_value.defined;
         }
@@ -68,7 +69,11 @@ sub new_boundary(&v, @cursor) {
 
 sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
-    my &v = sub (@where) { return if Any ~~ any(@sources[@where]); say $(@where); f( |@sources[@where] ) };
+    my &v = sub (@where) {
+        return if Any ~~ any(@sources[@where]);
+    #   say $(@where);
+        f( |@sources[@where] )
+    };
     push my @boundaries, 0 xx @sources.elems;
     while (@boundaries) {
         say 'Boundaries: ', @boundaries;
@@ -78,7 +83,7 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
         say 'Cursor: ', @cursor, ' => ', v( @cursor );
         take @sources[ @cursor ];
         push @boundaries, |new_boundary(&v, @cursor );
-    #   last if ++$ > 4;
+        last if ++$ > 2;
     }
 }
 
@@ -91,7 +96,7 @@ my @test = [
 ];
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
-    say gather combine_sort { say "f: ", ($^x, $^y); @test[ $^x][ $^y ] }, [^5], [^6] ;
+    say gather combine_sort { #`<say "f: ", ($^x, $^y);> @test[ $^x][ $^y ] }, [^5], [^6] ;
 #   say "Unit(1): ", unit_vectors((^1).reverse);
 #   say "Unit(2): ", unit_vectors((^2).reverse);
 #   say "Unit(3): ", unit_vectors((^3).reverse);
