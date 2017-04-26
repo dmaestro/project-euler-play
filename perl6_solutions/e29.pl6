@@ -42,8 +42,9 @@ sub unit_vectors(+@coordinate) {
 sub new_boundary(&v, @cursor) {
     my $current_value = v( @cursor);
     say "Current: $current_value";
-    gather {
+    my @boundaries = gather {
       while $current_value eqv v( @cursor ) {
+        say "Diagonal {@cursor}";
         for unit_vectors(@cursor) -> $vector {
         #   $vector.perl.say;
             my @new_cursor = @cursor;
@@ -57,7 +58,13 @@ sub new_boundary(&v, @cursor) {
         }
         @cursor = @cursor.flat Z+ (1 xx @cursor.elems);
       }
+      take @cursor if v( @cursor ).defined;
     }
+    say "All: {@boundaries}";
+    for ^(@boundaries.elems) -> $i {
+        say "Except [$i]: ", @boundaries.grep: * !eqv @boundaries[$i];
+    }
+    return eager @boundaries.grep: -> $test { $test outside all( @boundaries.grep: * !eqv $test ) }
 }
 
 # start with [0, 0] as boundary
@@ -82,8 +89,11 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     #   say 'Sources: ', @sources;
         say 'Cursor: ', @cursor, ' => ', v( @cursor );
         take @sources[ @cursor ];
-        push @boundaries, |new_boundary(&v, @cursor );
-        last if ++$ > 2;
+        my @new = new_boundary(&v, @cursor.clone).grep: * outside all(@boundaries);
+        say 'Cursor: ', @cursor, ' => ', v( @cursor );
+        say "Acceptable: ", @new;
+        push @boundaries, |@new;
+        last if ++$ > 6;
     }
 }
 
