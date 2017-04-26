@@ -18,9 +18,7 @@ subset Nat of Int where * > 0 ;
 # Matrix lookup
 # NOTE: this overrides array slices !!
 multi postcircumfix:<[ ]>(Positional $ary, List $coord) {
-#   say 'src, crsr: ', ( $ary.perl, $coord.perl );
     zip $ary, $coord.flat, :with( {
-    #   say 'ary, index: ', ( $^a.perl, $^i.WHICH );
         $^a[$^i]
     } );
 }
@@ -31,7 +29,6 @@ sub infix:<outside>(List $coord, List $boundary) {
 }
 
 sub unit_vectors(+@coordinate) {
-    @coordinate.perl.say;
     gather {
         for @coordinate.keys -> $i {
             take eager map { +($_ == $i) }, @coordinate.keys;
@@ -39,20 +36,15 @@ sub unit_vectors(+@coordinate) {
     }
 }
 
-sub new_boundary(&v, @cursor) {
-    my $current_value = v( @cursor);
-    say "Current: $current_value";
+sub new_boundary(&v, @cursor is copy) {
+    my $current_value = v(@cursor);
     my @boundaries = gather {
-      while $current_value eqv v( @cursor ) {
-        say "Diagonal {@cursor}";
+      while $current_value eqv v(@cursor) {
         for unit_vectors(@cursor) -> $vector {
-        #   $vector.perl.say;
             my @new_cursor = @cursor;
             repeat while my $new_value eqv $current_value {
                 @new_cursor = @new_cursor Z+ $vector.flat;
                 $new_value = v( @new_cursor);
-                say "New: {@new_cursor} => $new_value"
-                    if $new_value.defined;
             }
             take @new_cursor if $new_value.defined;
         }
@@ -60,19 +52,10 @@ sub new_boundary(&v, @cursor) {
       }
       take @cursor if v( @cursor ).defined;
     }
-    say "All: {@boundaries}";
-    for ^(@boundaries.elems) -> $i {
-        say "Except [$i]: ", @boundaries.grep: * !eqv @boundaries[$i];
+    return eager @boundaries.grep: -> $test {
+        $test outside all( @boundaries.grep: * !eqv $test )
     }
-    return eager @boundaries.grep: -> $test { $test outside all( @boundaries.grep: * !eqv $test ) }
 }
-
-# start with [0, 0] as boundary
-# select minumum boundary coordinate
-# compute value and take source values at that coordinate
-# while boundary_value.min exists
-#   if min value == current value
-#       replace the boundary coord with new boundaries
 
 sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
@@ -87,10 +70,8 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
         my @cursor = |@boundaries.min: &v;
         @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
     #   say 'Sources: ', @sources;
-        say 'Cursor: ', @cursor, ' => ', v( @cursor );
         take @sources[ @cursor ];
-        my @new = new_boundary(&v, @cursor.clone).grep: * outside all(@boundaries);
-        say 'Cursor: ', @cursor, ' => ', v( @cursor );
+        my @new = new_boundary(&v, @cursor).grep: * outside all(@boundaries);
         say "Acceptable: ", @new;
         push @boundaries, |@new;
         last if ++$ > 6;
