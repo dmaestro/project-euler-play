@@ -18,7 +18,7 @@ subset Nat of Int where * > 0 ;
 # Matrix lookup
 # NOTE: this overrides array slices !!
 multi postcircumfix:<[ ]>(Positional $ary, List $coord) {
-    zip $ary, $coord.flat, :with( {
+    eager zip $ary, $coord.flat, :with( {
         $^a[$^i]
     } );
 }
@@ -61,20 +61,21 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
     my &v = sub (@where) {
         return if Any ~~ any(@sources[@where]);
-    #   say $(@where);
-        f( |@sources[@where] )
+        f( |@sources[@where] );
     };
     push my @boundaries, 0 xx @sources.elems;
-    while (@boundaries) {
-        say 'Boundaries: ', @boundaries;
-        my @cursor = |@boundaries.min: &v;
-        @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
-    #   say 'Sources: ', @sources;
-        take @sources[ @cursor ];
-        my @new = new_boundary(&v, @cursor).grep: * outside all(@boundaries);
-        say "Acceptable: ", @new;
-        push @boundaries, |@new;
-        last if ++$ > 6;
+    squish :as({ &f(|$_) }), gather {
+        while (@boundaries) {
+        #   say "\n", 'Boundaries: ', @boundaries;
+            my @cursor = |@boundaries.min: &v;
+            @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
+        #   say "Taking: ", @cursor.&{ $_ => &v($_) };
+            take @sources[ @cursor ];
+            my @new = new_boundary(&v, @cursor).grep: * outside all(@boundaries);
+            push @boundaries, |@new;
+        #   last if ++$ > 6;
+        }
+        say "Exiting gather";
     }
 }
 
@@ -87,9 +88,6 @@ my @test = [
 ];
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
-    say gather combine_sort { #`<say "f: ", ($^x, $^y);> @test[ $^x][ $^y ] }, [^5], [^6] ;
-#   say "Unit(1): ", unit_vectors((^1).reverse);
-#   say "Unit(2): ", unit_vectors((^2).reverse);
-#   say "Unit(3): ", unit_vectors((^3).reverse);
-#   say "Unit(4): ", unit_vectors((^4).reverse);
+#   say combine_sort { @test[ $^x][ $^y ] }, [^5], [^6] ;
+    say combine_sort( -> $x, $y { $x ** $y }, [2..$limit], [2..$limit] ).elems;
 }
