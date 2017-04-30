@@ -90,6 +90,6 @@ my @test = [
 ];
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
-#   say combine_sort { @test[ $^x][ $^y ] }, [^5], [^6] ;
-    say combine_sort( -> [$x, $y] { $x ** $y }, [2..$limit], [2..$limit] ).elems;
+#   say combine_sort -> [$x, $y] { @test[$x][$y] }, [^5], [^6] ;
+    say combine_sort( { $_[0] ** $_[1] }, [2..$limit], [2..$limit] ).elems;
 }
