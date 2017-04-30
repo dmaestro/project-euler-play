@@ -38,9 +38,11 @@ sub unit_vectors(+@coordinate) {
 
 sub new_boundary(&v, @cursor is copy) {
     my $current_value = v(@cursor);
+    my @uv = unit_vectors(@cursor);
+    my $ce = @cursor.elems;
     my @boundaries = gather {
       while $current_value eqv v(@cursor) {
-        for unit_vectors(@cursor) -> $vector {
+        for @uv -> $vector {
             my @new_cursor = @cursor;
             repeat while my $new_value eqv $current_value {
                 @new_cursor = @new_cursor Z+ $vector.flat;
@@ -48,7 +50,7 @@ sub new_boundary(&v, @cursor is copy) {
             }
             take @new_cursor if $new_value.defined;
         }
-        @cursor = @cursor.flat Z+ (1 xx @cursor.elems);
+        @cursor = @cursor.flat Z+ (1 xx $ce);
       }
       take @cursor if v( @cursor ).defined;
     }
@@ -61,10 +63,10 @@ sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
     return if 0 == any(@sources».elems);
     my &v = sub (@where) {
         return if Any ~~ any(@sources[@where]);
-        f( |@sources[@where] );
+        f( @sources[@where] );
     };
     push my @boundaries, 0 xx @sources.elems;
-    squish :as({ &f(|$_) }), gather {
+    squish :as({ &f($_) }), gather {
         while (@boundaries) {
         #   say "\n", 'Boundaries: ', @boundaries;
             my @cursor = |@boundaries.min: &v;
@@ -89,5 +91,5 @@ my @test = [
 
 sub MAIN(Nat :$limit where * > 1 = 100) {
 #   say combine_sort { @test[ $^x][ $^y ] }, [^5], [^6] ;
-    say combine_sort( -> $x, $y { $x ** $y }, [2..$limit], [2..$limit] ).elems;
+    say combine_sort( -> [$x, $y] { $x ** $y }, [2..$limit], [2..$limit] ).elems;
 }
