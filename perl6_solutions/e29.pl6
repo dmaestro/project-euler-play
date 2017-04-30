@@ -29,55 +29,50 @@ sub infix:<outside>(List $coord, List $boundary) {
 }
 
 sub unit_vectors(+@coordinate) {
-    gather {
-        for @coordinate.keys -> $i {
-            take eager map { +($_ == $i) }, @coordinate.keys;
-        }
-    }
+    @coordinate.keys.map: -> $i {
+        eager map { +($_ == $i) },
+            @coordinate.keys
+    };
 }
 
-sub new_boundary(&v, @cursor is copy) {
+sub new_boundary(&v, @cursor is copy --> List()) {
     my $current_value = v(@cursor);
     my @uv = unit_vectors(@cursor);
     my $ce = @cursor.elems;
     my @boundaries = gather {
       while $current_value eqv v(@cursor) {
-        for @uv -> $vector {
+        for @uv -> @vector {
             my @new_cursor = @cursor;
             repeat while my $new_value eqv $current_value {
-                @new_cursor = @new_cursor Z+ $vector.flat;
+                @new_cursor = @new_cursor Z+ @vector;
                 $new_value = v( @new_cursor);
             }
             take @new_cursor if $new_value.defined;
         }
-        @cursor = @cursor.flat Z+ (1 xx $ce);
+        @cursor = @cursor Z+ (1 xx $ce);
       }
       take @cursor if v( @cursor ).defined;
     }
-    return eager @boundaries.grep: -> $test {
-        $test outside all( @boundaries.grep: * !eqv $test )
+    return @boundaries.grep: -> $coord {
+        $coord outside all( @boundaries.grep: * !eqv $coord )
     }
 }
 
-sub combine_sort(&f, **@sources where { $_.all ~~ List }) {
+sub combine_sort(&f, **@sources where { .all ~~ List }) {
     return if 0 == any(@sources».elems);
     my &v = sub (@where) {
         return if Any ~~ any(@sources[@where]);
         f( @sources[@where] );
     };
     push my @boundaries, 0 xx @sources.elems;
-    squish :as({ &f($_) }), gather {
+    squish :as( &f ), gather {
         while (@boundaries) {
-        #   say "\n", 'Boundaries: ', @boundaries;
             my @cursor = |@boundaries.min: &v;
             @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
-        #   say "Taking: ", @cursor.&{ $_ => &v($_) };
             take @sources[ @cursor ];
             my @new = new_boundary(&v, @cursor).grep: * outside all(@boundaries);
             push @boundaries, |@new;
-        #   last if ++$ > 6;
         }
-        say "Exiting gather";
     }
 }
 
