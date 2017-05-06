@@ -47,11 +47,11 @@ sub new_boundary(&v, @cursor is copy --> List()) {
                 @new_cursor = @new_cursor Z+ @vector;
                 $new_value = v( @new_cursor);
             }
-            take @new_cursor if $new_value.defined;
+            take @new_cursor.List if $new_value.defined;
         }
         @cursor = @cursor Z+ (1 xx $ce);
       }
-      take @cursor if v( @cursor ).defined;
+      take @cursor.List if v( @cursor ).defined;
     }
     return @boundaries.grep: -> $coord {
         $coord outside all( @boundaries.grep: * !eqv $coord )
@@ -64,13 +64,13 @@ sub combine_sort(&f, **@sources where { .all ~~ List }) {
         return if Any ~~ any(@sources[@where]);
         f( @sources[@where] );
     };
-    push my @boundaries, 0 xx @sources.elems;
+    push my @boundaries, (0 xx @sources.elems).List;
     squish :as( &f ), gather {
         while (@boundaries) {
-            my @cursor = |@boundaries.min: &v;
-            @boundaries = @boundaries.grep: { $_.List !eqv @cursor.List };
-            take @sources[ @cursor ];
-            my @new = new_boundary(&v, @cursor).grep: * outside all(@boundaries);
+            my $cursor = @boundaries.min: &v;
+            @boundaries = @boundaries.grep: { $_ !eqv $cursor };
+            take @sources[ $cursor ];
+            my @new = new_boundary(&v, $cursor).grep: * outside all(@boundaries);
             push @boundaries, |@new;
         }
     }
