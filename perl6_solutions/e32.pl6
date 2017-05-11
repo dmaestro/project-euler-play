@@ -30,7 +30,7 @@ sub divisors(Nat $n) {
 sub is-pandigital-of(Nat $pan, Nat $num) {
     state %pan;
     so $num.comb.cache.&{
-        .all ~~ (%pan{$pan} //= 1..$pan) && .elems == .unique.elems
+        .all ~~ (%pan{$pan} //= 1..$pan) && .elems == .unique.elems == $pan
     };
 }
 
@@ -39,12 +39,12 @@ sub all_products(Nat $prod) {
 }
 
 sub MAIN(Nat :$pan=9) {
-    .&{ say is-pandigital-of($pan, $_) } for <12 123 1234 12345 123456>;
     my &is-pandigital = &is-pandigital-of.assuming($pan);
     my @prods = gather {
         for 10**($pan div 2 - 1) .. 10**($pan div 2) -> $prod {
             take $prod if all_products($prod).grep({ .Int.&is-pandigital });
         }
     }
-    say "$_: " ~ all_products($_).grep: { .Int.&is-pandigital } for @prods;
+#   say "$_: " ~ all_products($_).grep: { .Int.&is-pandigital } for @prods;
+    say [+] @prods;
 }
