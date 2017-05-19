@@ -14,6 +14,12 @@
 
 subset Nat of Int where * > 0;
 
+sub first_factor (Nat $n) {
+    fail if $n == 1;
+    state Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
+    $primes.cache.first( $n %% * || * > sqrt($n) ).grep( $n %% * )[0]  // $n;
+}
+
 # role to make a rational type
 # printable as "num/denom"
 role Fraction {
@@ -23,16 +29,36 @@ role Fraction {
 }
 
 sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) {
-    ($numerator / $denominator).denominator == $denominator;
+#   ($numerator / $denominator).denominator == $denominator;
+    $numerator gcd $denominator == 1;
 }
 
 sub resilience(Nat $denominator) {
+#   return 1/1 if $denominator.is-prime;
     my &is-resilient = &resilient.assuming( $denominator );
-    (1..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
+    (2..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
 }
 
-sub MAIN(Nat $numerator, Str $slash where $slash eq '/', Nat $denominator) {
+sub cast-out(Nat $denominator, *@factors) {
+    my $flimsy = $denominator - 1;
+    my $rem = $denominator;
+    for @factors -> $divisor {
+        $rem div= $divisor while $rem %% $divisor;
+        $rem.say;
+    }
+    return if $rem == 1;
+    return $denominator div first_factor($rem) - 1;
+}
+
+sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
     my $smallest = ( 2 ... { .&resilience < ($numerator / $denominator) } ).tail;
     say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
+    say "R($_): ",.&resilience but Fraction for $smallest, 30, 210, 2310; #, 94744;
+#   say first_factor(210);
+    ( 210, { .say; $_ div first_factor($_) } ... 1 ).eager;
+    say cast-out( 210 );
+    say cast-out( 210, first_factor(210) );
+    say cast-out( 210, |(210, 105)».&first_factor );
+    say cast-out( 210, |(210, 105, 35)».&first_factor );
 }
