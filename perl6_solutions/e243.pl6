@@ -20,6 +20,19 @@ sub first_factor (Nat $n) {
     $primes.cache.first( $n %% * || * > sqrt($n) ).grep( $n %% * )[0]  // $n;
 }
 
+sub prime_factors(Nat $n --> Seq) {
+    gather {
+        my $rem = $n;
+        while $rem > 1 {
+            my $factor = first_factor($rem);
+            take $factor;
+            while $rem %% $factor {
+                $rem div= $factor;
+            }
+        }
+    }
+}
+
 # role to make a rational type
 # printable as "num/denom"
 role Fraction {
@@ -36,29 +49,33 @@ sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) 
 sub resilience(Nat $denominator) {
 #   return 1/1 if $denominator.is-prime;
     my &is-resilient = &resilient.assuming( $denominator );
-    (2..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
+    (1..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
 }
 
-sub cast-out(Nat $denominator, *@factors) {
+sub min_flimsiness(Nat $denominator, Nat $rank = 2) {
     my $flimsy = $denominator - 1;
-    my $rem = $denominator;
-    for @factors -> $divisor {
-        $rem div= $divisor while $rem %% $divisor;
-        $rem.say;
-    }
-    return if $rem == 1;
-    return $denominator div first_factor($rem) - 1;
+    return $flimsy / $flimsy if $denominator.is-prime;
+    my @factors = prime_factors($denominator).head($rank);
+    my @cast_outs = gather {
+        for @factors -> $factor {
+            take [-]
+                ( $factor X (
+                        (),
+                        |@factors.grep(* < $factor)
+                    )
+                ).map({ [*] .flat.eager }
+                )».&{$flimsy div $_}.Slip,
+                0;
+        }
+    };
+    say "Cast outs: ", @cast_outs;
+    return ([+] @cast_outs) / $flimsy;
 }
 
 sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
     my $smallest = ( 2 ... { .&resilience < ($numerator / $denominator) } ).tail;
     say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
-    say "R($_): ",.&resilience but Fraction for $smallest, 30, 210, 2310; #, 94744;
-#   say first_factor(210);
-    ( 210, { .say; $_ div first_factor($_) } ... 1 ).eager;
-    say cast-out( 210 );
-    say cast-out( 210, first_factor(210) );
-    say cast-out( 210, |(210, 105)».&first_factor );
-    say cast-out( 210, |(210, 105, 35)».&first_factor );
+    say "R($_): ",.&resilience but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
+    say "F($_): ",.&min_flimsiness(4) but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
 }
