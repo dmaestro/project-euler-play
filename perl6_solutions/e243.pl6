@@ -47,35 +47,37 @@ sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) 
 }
 
 sub resilience(Nat $denominator) {
-#   return 1/1 if $denominator.is-prime;
+    return 1/1 if $denominator.is-prime;
     my &is-resilient = &resilient.assuming( $denominator );
     (1..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
 }
 
-sub min_flimsiness(Nat $denominator, Nat $rank = 2) {
+sub max_flimsiness(Nat $denominator) {
     my $flimsy = $denominator - 1;
     return $flimsy / $flimsy if $denominator.is-prime;
-    my @factors = prime_factors($denominator).head($rank);
+    my @factors = prime_factors($denominator);
     my @cast_outs = gather {
         for @factors -> $factor {
             take [-]
-                ( $factor X (
-                        (),
-                        |@factors.grep(* < $factor)
-                    )
-                ).map({ [*] .flat.eager }
-                )».&{$flimsy div $_}.Slip,
-                0;
+                $flimsy div $factor,
+                $factor == @factors[0]
+                ?? 0
+                !! $flimsy div ( $factor * @factors[0] )
+                ;
         }
     };
-    say "Cast outs: ", @cast_outs;
+#   say "Cast outs: ", @cast_outs, " / ", $flimsy;
+#   say [+] @cast_outs;
     return ([+] @cast_outs) / $flimsy;
 }
 
 sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
-    my $smallest = ( 2 ... { .&resilience < ($numerator / $denominator) } ).tail;
+    my $smallest = ( 2 ... * ).grep({ .&max_flimsiness + $numerator / $denominator > 1 }) .first({
+    #   say .&max_flimsiness but Fraction;
+        .&resilience < ($numerator / $denominator)
+    });
     say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
     say "R($_): ",.&resilience but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
-    say "F($_): ",.&min_flimsiness(4) but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
+    say "F($_): ",.&max_flimsiness but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
 }
