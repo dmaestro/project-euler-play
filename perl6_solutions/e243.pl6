@@ -42,14 +42,22 @@ role Fraction {
 }
 
 sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) {
-#   ($numerator / $denominator).denominator == $denominator;
     $numerator gcd $denominator == 1;
 }
 
 sub resilience(Nat $denominator) {
     return 1/1 if $denominator.is-prime;
-    my &is-resilient = &resilient.assuming( $denominator );
-    (1..^$denominator).grep( { .&is-resilient } ).elems / ($denominator - 1);
+    state %roots;
+    my @factors = prime_factors( $denominator );
+#   @factors.say;
+    my $base = [*] @factors;
+    my $root = %roots{ $base } //=
+        (1..^$base).grep( * gcd $base == 1 ).elems / ($base - 1);
+    if $base == $denominator {
+        return $root;
+    }
+    my $factor = $denominator div $base;
+    return ($root.numerator * $factor) / (($root.denominator + 1) * $factor - 1);
 }
 
 sub max_flimsiness(Nat $denominator) {
@@ -77,7 +85,7 @@ sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     #   say .&max_flimsiness but Fraction;
         .&resilience < ($numerator / $denominator)
     });
+
     say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
-    say "R($_): ",.&resilience but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
-    say "F($_): ",.&max_flimsiness but Fraction for $smallest, 30, 105, 210, 2310; #, 94744;
+    say "R($_): ",.&resilience but Fraction for 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310, $smallest;
 }
