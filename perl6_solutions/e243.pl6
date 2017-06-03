@@ -45,14 +45,29 @@ sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) 
     $numerator gcd $denominator == 1;
 }
 
+sub r-prime(Nat $denominator) {
+    (1..^$denominator).grep( * gcd $denominator == 1 ).elems / ($denominator - 1);
+}
+
+sub F(Nat $n) {
+    return 1 if $n.is-prime;
+    my @factors = prime_factors($n);
+    if @factors.elems == 2 {
+        return -1 + [+] $n X[div] @factors;
+    }
+    my $m = @factors.max;
+    my $p = [*] @factors;
+    return ($m-1) * F($n div $m) + $p div $m;
+}
+
 sub resilience(Nat $denominator) {
-    return 1/1 if $denominator.is-prime;
+#   return 1/1 if $denominator.is-prime;
     state %roots;
     my @factors = prime_factors( $denominator );
 #   @factors.say;
     my $base = [*] @factors;
     my $root = %roots{ $base } //=
-        (1..^$base).grep( * gcd $base == 1 ).elems / ($base - 1);
+        ($base - F($base)) / ($base - 1);
     if $base == $denominator {
         return $root;
     }
@@ -60,32 +75,20 @@ sub resilience(Nat $denominator) {
     return ($root.numerator * $factor) / (($root.denominator + 1) * $factor - 1);
 }
 
-sub max_flimsiness(Nat $denominator) {
-    my $flimsy = $denominator - 1;
-    return $flimsy / $flimsy if $denominator.is-prime;
-    my @factors = prime_factors($denominator);
-    my @cast_outs = gather {
-        for @factors -> $factor {
-            take [-]
-                $flimsy div $factor,
-                $factor == @factors[0]
-                ?? 0
-                !! $flimsy div ( $factor * @factors[0] )
-                ;
-        }
-    };
-#   say "Cast outs: ", @cast_outs, " / ", $flimsy;
-#   say [+] @cast_outs;
-    return ([+] @cast_outs) / $flimsy;
-}
-
 sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
-    my $smallest = ( 2 ... * ).grep({ .&max_flimsiness + $numerator / $denominator > 1 }) .first({
-    #   say .&max_flimsiness but Fraction;
+    my $smallest = ( 2 ... * ).grep({ ! .is-prime }).first({
+        my $rem = ++$ % 10000; <.>.print if $rem %% 500; .put if $rem == 0;
         .&resilience < ($numerator / $denominator)
     });
-
     say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
-    say "R($_): ",.&resilience but Fraction for 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310, $smallest;
+    say "R´($_):\t",.&r-prime but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310;
+#   say "R($_):\t",.&resilience but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310, $smallest;
+    say "F($_):\t",.&F for 2, 6, 10, 15, 30, 105, 210, 2310, $smallest;
+    my Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
+    for 1..10 -> $n {
+        my @f = $primes[^$n];
+        say "$n:\t", [*] @f;
+        say "R($n):\t", ([*] @f).&resilience.&{ .numerator / (.denominator+1) }; # but Fraction;
+    }
 }
