@@ -77,18 +77,18 @@ sub resilience(Nat $denominator) {
 
 sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
-    my $smallest = ( 2 ... * ).grep({ ! .is-prime }).first({
-        my $rem = ++$ % 10000; <.>.print if $rem %% 500; .put if $rem == 0;
-        .&resilience < ($numerator / $denominator)
-    });
-    say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
+#   my $smallest = ( 2 ... * ).grep({ ! .is-prime }).first({
+#       my $rem = ++$ % 10000; <.>.print if $rem %% 500; .put if $rem == 0;
+#       .&resilience < ($numerator / $denominator)
+#   });
+#   say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
     say "R´($_):\t",.&r-prime but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310;
 #   say "R($_):\t",.&resilience but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310, $smallest;
-    say "F($_):\t",.&F for 2, 6, 10, 15, 30, 105, 210, 2310, $smallest;
+#   say "F($_):\t",.&F for 2, 6, 10, 15, 30, 105, 210, 2310, $smallest;
     my Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
-    for 1..10 -> $n {
-        my @f = $primes[^$n];
-        say "$n:\t", [*] @f;
-        say "R($n):\t", ([*] @f).&resilience.&{ .numerator / (.denominator+1) }; # but Fraction;
+    for $primes[^10].combinations().grep(*.elems > 1).map({ [*] $_ }).sort -> $n {
+        print "OK - " if $n.&resilience.&{ .numerator / (.denominator+1) } < $numerator / $denominator;
+        say "R($n):\t", $n.&resilience; # .&{ .numerator / (.denominator+1) }; # but Fraction;
     }
+    say $primes[9,10];
 }
