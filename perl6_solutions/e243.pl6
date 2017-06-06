@@ -41,6 +41,7 @@ role Fraction {
     }
 }
 
+### the next two functions are not used directly
 sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) {
     $numerator gcd $denominator == 1;
 }
@@ -48,6 +49,7 @@ sub resilient(Nat $denominator, Nat $numerator where $numerator < $denominator) 
 sub r-prime(Nat $denominator) {
     (1..^$denominator).grep( * gcd $denominator == 1 ).elems / ($denominator - 1);
 }
+###
 
 sub F(Nat $n) {
     return 1 if $n.is-prime;
@@ -64,7 +66,6 @@ sub resilience(Nat $denominator) {
 #   return 1/1 if $denominator.is-prime;
     state %roots;
     my @factors = prime_factors( $denominator );
-#   @factors.say;
     my $base = [*] @factors;
     my $root = %roots{ $base } //=
         ($base - F($base)) / ($base - 1);
@@ -77,26 +78,24 @@ sub resilience(Nat $denominator) {
 
 sub MAIN(Nat $numerator = 15499, Str $slash = '/', Nat $denominator = 94744) {
     fail "Invalid arguments!" unless $numerator / $denominator < 1;
-#   my $smallest = ( 2 ... * ).grep({ ! .is-prime }).first({
-#       my $rem = ++$ % 10000; <.>.print if $rem %% 500; .put if $rem == 0;
-#       .&resilience < ($numerator / $denominator)
-#   });
-#   say "R($smallest) < ", ( $numerator / $denominator ) but Fraction;
-    say "R´($_):\t",.&r-prime but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310;
-#   say "R($_):\t",.&resilience but Fraction for 2, 6, 10, 15, 30, 105, |(210 X* (1, 2, 3, 4, 5)), 2310, $smallest;
-#   say "F($_):\t",.&F for 2, 6, 10, 15, 30, 105, 210, 2310, $smallest;
+
     my Seq $primes = (2,3, (* + 2) ... *).grep( { .is-prime } );
-    $primes[^10].combinations().grep(*.elems > 1).map({ [*] $_ }).grep({
+
+    # compute limit, the highest prime factor that needs to be considered
+    my $product = 1;
+    my $limit;
+    $primes.cache.first({ $product *= $_; $limit = ++$; $product.&resilience < $numerator / $denominator });
+    $limit.say;
+
+    # resilience is lowest for combinations of unique prime factors
+    $primes[^$limit].combinations().grep(*.elems > 1).map({ [*] $_ }).grep({
+        # multiples of these combinations approach a slightly smaller limit
         .&resilience.&{ .numerator / (.denominator+1) } < $numerator / $denominator
     }).map(-> $r {
         (
+            # include multiples that share common prime factors
             1, |(2 ...^ { $_ gcd $r == 1 }) X* $r
         ).Slip
-    }).sort\
+    }).sort.first({ .&resilience < $numerator / $denominator })\
     ».say;
-#   for $primes[^10].combinations().grep(*.elems > 1).map({ [*] $_ }).sort -> $n {
-#       print "OK - " if $n.&resilience.&{ .numerator / (.denominator+1) } < $numerator / $denominator;
-#       say "R($n):\t", $n.&resilience; # .&{ .numerator / (.denominator+1) }; # but Fraction;
-#   }
-    say $primes[9,10];
 }
